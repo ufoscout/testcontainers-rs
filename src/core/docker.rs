@@ -7,6 +7,7 @@ where
     Self: Sized,
 {
     fn run<I: Image>(&self, image: I) -> Container<'_, Self, I>;
+    fn run_with_options<I: Image>(&self, options: Vec<&str>, image: I) -> Container<'_, Self, I>;
     fn logs(&self, id: &str) -> Logs;
     fn ports(&self, id: &str) -> Ports;
     fn rm(&self, id: &str);

@@ -71,7 +71,11 @@ impl Cli {
         }
     }
 
-    fn build_run_command<'a, I: Image>(image: &I, command: &'a mut Command) -> &'a mut Command {
+    fn build_run_command<'a, I: Image>(
+        options: Vec<&str>,
+        image: &I,
+        command: &'a mut Command,
+    ) -> &'a mut Command {
         command.arg("run");
 
         for (key, value) in image.env_vars() {
@@ -82,9 +86,11 @@ impl Cli {
             command.arg("-v").arg(format!("{}:{}", orig, dest));
         }
 
+        for arg in options {
+            command.arg(arg);
+        }
+
         command
-            .arg("-d") // Always run detached
-            .arg("-P") // Always expose all ports
             .arg(image.descriptor())
             .args(image.args())
             .stdout(Stdio::piped())
@@ -93,9 +99,13 @@ impl Cli {
 
 impl Docker for Cli {
     fn run<I: Image>(&self, image: I) -> Container<'_, Cli, I> {
+        self.run_with_options(vec!["-d", "-P"], image)
+    }
+
+    fn run_with_options<I: Image>(&self, options: Vec<&str>, image: I) -> Container<'_, Cli, I> {
         let mut docker = Command::new("docker");
 
-        let command = Cli::build_run_command(&image, &mut docker);
+        let command = Cli::build_run_command(options, &image, &mut docker);
 
         log::debug!("Executing command: {:?}", command);
 
@@ -328,11 +338,12 @@ mod tests {
         let image = HelloWorld { volumes, env_vars };
 
         let mut docker = Command::new("docker");
-        let command = Cli::build_run_command(&image, &mut docker);
+        let command = Cli::build_run_command(vec!["-d", "-P"], &image, &mut docker);
 
         println!("Executing command: {:?}", command);
 
-        assert!(format!("{:?}", command).contains(r#""-v" "one-from:one-dest"#));
+        assert!(format!("{:?}", command).contains(r#"-d"#));
+        assert!(format!("{:?}", command).contains(r#"-P"#));
         assert!(format!("{:?}", command).contains(r#""-v" "two-from:two-dest"#));
         assert!(format!("{:?}", command).contains(r#""-e" "one-key=one-value""#));
         assert!(format!("{:?}", command).contains(r#""-e" "two-key=two-value""#));
