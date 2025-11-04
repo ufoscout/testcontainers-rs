@@ -5,13 +5,9 @@ use bollard::{
     Docker,
 };
 use testcontainers::{
-    core::{
-        logs::{consumer::logging_consumer::LoggingConsumer, LogFrame},
-        wait::{ExitWaitStrategy, LogWaitStrategy},
-        BuildImageOptions, CmdWaitFor, ExecCommand, WaitFor,
-    },
-    runners::{AsyncBuilder, AsyncRunner},
-    GenericBuildableImage, GenericImage, Image, ImageExt,
+    GenericBuildableImage, GenericImage, Image, ImageExt, core::{
+        BuildImageOptions, CmdWaitFor, ContainerPort, ExecCommand, WaitFor, logs::{LogFrame, consumer::logging_consumer::LoggingConsumer}, wait::{ExitWaitStrategy, LogWaitStrategy, PortWaitStrategy}
+    }, runners::{AsyncBuilder, AsyncRunner}
 };
 use tokio::io::AsyncReadExt;
 
@@ -202,6 +198,22 @@ async fn async_wait_for_http() -> anyhow::Result<()> {
         .await
         .with_exposed_port(80.tcp());
     let _container = image.start().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn async_wait_for_port_tpc() -> anyhow::Result<()> {
+    let _ = pretty_env_logger::try_init();
+
+    // UNLUCKILY IT DOES NOT WORK BECAUSE DOCKER OPENS THE PORT OF THE CONTAINER
+    // AND ALLOWS TO CONNECT TO IT EVEN IF THE INTERNAL SERVICE IS NOT LISTENING YET :(
+    let waitfor_port = WaitFor::Port(PortWaitStrategy::tcp(80));
+
+    let image = get_server_image(Some(waitfor_port))
+        .await
+        .with_exposed_port(ContainerPort::Tcp(8081));
+    let _container = image.start().await?;
+
     Ok(())
 }
 

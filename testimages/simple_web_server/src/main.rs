@@ -13,6 +13,7 @@ async fn main() {
     let addr = SocketAddr::from(([0, 0, 0, 0], 80));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     eprintln!("server will be listening to the port 80");
+    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
     println!("server is ready");
     println!("server is ready"); // duplicate line to test `times` parameter of `WaitFor::Log`
     axum::serve(listener, app.into_make_service())

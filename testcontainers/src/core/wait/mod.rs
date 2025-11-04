@@ -6,6 +6,7 @@ pub use health_strategy::HealthWaitStrategy;
 #[cfg_attr(docsrs, doc(cfg(feature = "http_wait_plain")))]
 pub use http_strategy::HttpWaitStrategy;
 pub use log_strategy::LogWaitStrategy;
+pub use port_strategy::PortWaitStrategy;
 
 use crate::core::{async_container::raw::RawContainer, client::Client, logs::LogSource};
 
@@ -15,6 +16,7 @@ pub(crate) mod health_strategy;
 #[cfg(feature = "http_wait_plain")]
 pub(crate) mod http_strategy;
 pub(crate) mod log_strategy;
+pub(crate) mod port_strategy;
 
 pub(crate) trait WaitStrategy {
     async fn wait_until_ready(
@@ -41,6 +43,8 @@ pub enum WaitFor {
     Http(Box<HttpWaitStrategy>),
     /// Wait for the container to exit.
     Exit(ExitWaitStrategy),
+    /// Wait for a port to become available.
+    Port(PortWaitStrategy),
 }
 
 impl WaitFor {
@@ -149,6 +153,9 @@ impl WaitStrategy for WaitFor {
                 strategy.wait_until_ready(client, container).await?;
             }
             WaitFor::Nothing => {}
+            WaitFor::Port(strategy) => {
+                strategy.wait_until_ready(client, container).await?;
+            }
         }
         Ok(())
     }

@@ -52,6 +52,8 @@ pub struct GenericImage {
 }
 
 impl GenericImage {
+
+    /// Creates a new [`GenericImage`] with the given name and tag.
     pub fn new<S: Into<String>>(name: S, tag: S) -> GenericImage {
         Self {
             name: name.into(),
@@ -62,16 +64,22 @@ impl GenericImage {
         }
     }
 
+    /// Set the conditions that need to be met before a started container is considered ready.
     pub fn with_wait_for(mut self, wait_for: WaitFor) -> Self {
         self.wait_for.push(wait_for);
         self
     }
 
+    /// Sets the [entrypoint](`https://docs.docker.com/reference/dockerfile/#entrypoint`) this image needs to be created with.
     pub fn with_entrypoint(mut self, entrypoint: &str) -> Self {
         self.entrypoint = Some(entrypoint.to_string());
         self
     }
 
+    /// Sets the ports that needs to be exposed when a container is created.
+    ///
+    /// This method is useful when there is a need to expose some ports, but there is
+    /// no `EXPOSE` instruction in the Dockerfile of an image.
     pub fn with_exposed_port(mut self, port: ContainerPort) -> Self {
         self.exposed_ports.push(port);
         self
